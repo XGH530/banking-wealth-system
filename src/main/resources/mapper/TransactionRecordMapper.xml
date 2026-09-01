@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bank.account.mapper.TransactionRecordMapper">
+
+    <resultMap id="txnVOMap" type="com.bank.account.vo.TransactionVO">
+        <id property="id" column="id"/>
+        <result property="txnNo" column="txn_no"/>
+        <result property="accountNo" column="account_no"/>
+        <result property="txnType" column="txn_type"/>
+        <result property="amount" column="amount"/>
+        <result property="balanceBefore" column="balance_before"/>
+        <result property="balanceAfter" column="balance_after"/>
+        <result property="counterpartyAccount" column="counterparty_account"/>
+        <result property="counterpartyName" column="counterparty_name"/>
+        <result property="remark" column="remark"/>
+        <result property="txnTime" column="txn_time"/>
+    </resultMap>
+
+    <!-- 按账号分页查询流水(限定为登录用户自己的账户) -->
+    <select id="selectVOPage" resultMap="txnVOMap">
+        SELECT t.id, t.txn_no, t.account_no, t.txn_type, t.amount,
+               t.balance_before, t.balance_after, t.counterparty_account,
+               t.counterparty_name, t.remark, t.txn_time
+        FROM transaction_record t
+        INNER JOIN account a ON t.account_id = a.id AND a.deleted = 0
+        WHERE 1 = 1
+        <if test="userId != null">
+            AND a.user_id = #{userId}
+        </if>
+        <if test="accountNo != null and accountNo != ''">
+            AND t.account_no = #{accountNo}
+        </if>
+        <if test="txnType != null">
+            AND t.txn_type = #{txnType}
+        </if>
+        <if test="startDate != null">
+            AND t.txn_time &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND t.txn_time &lt; DATE_ADD(#{endDate}, INTERVAL 1 DAY)
+        </if>
+        ORDER BY t.txn_time DESC
+    </select>
+
+</mapper>

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>登录 - 银行记账与理财系统</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/theme.css">
+<style>
+  body{min-height:100vh;margin:0;font-family:'PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+       background:linear-gradient(135deg,#1e3c72 0%,#2a5298 50%,#667eea 100%);
+       display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+  body::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 20% 20%,rgba(255,255,255,.08) 0,transparent 40%),radial-gradient(circle at 80% 80%,rgba(255,255,255,.06) 0,transparent 40%);pointer-events:none}
+  .login-card{width:100%;max-width:420px;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);border-radius:24px;padding:48px 40px;box-shadow:0 30px 80px rgba(0,0,0,.25);position:relative;z-index:1}
+  .login-logo{width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,#1e3c72,#667eea);display:flex;align-items:center;justify-content:center;color:#fff;font-size:34px;margin:0 auto 20px;box-shadow:0 10px 30px rgba(30,60,114,.4);transform:translateY(-4px)}
+  .login-title{font-size:26px;font-weight:700;color:#1a2238;text-align:center;margin-bottom:6px}
+  .login-sub{font-size:14px;color:#8a94a6;text-align:center;margin-bottom:32px}
+  .form-label-custom{font-size:13px;font-weight:600;color:#4a5568;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .form-control-custom{height:46px;border-radius:12px;border:1.5px solid #e2e8f0;padding:0 16px;font-size:15px;transition:all .25s}
+  .form-control-custom:focus{border-color:#667eea;box-shadow:0 0 0 4px rgba(102,126,234,.15);outline:none}
+  .btn-login{width:100%;height:48px;border-radius:12px;border:none;font-size:16px;font-weight:600;color:#fff;
+              background:linear-gradient(135deg,#1e3c72,#667eea);cursor:pointer;transition:all .25s;
+              box-shadow:0 8px 20px rgba(30,60,114,.3)}
+  .btn-login:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(30,60,114,.4)}
+  .btn-login:active{transform:translateY(0)}
+  .btn-login:disabled{opacity:.6;cursor:not-allowed;transform:none}
+  .quick-login{margin-top:28px;padding-top:20px;border-top:1px dashed #e2e8f0}
+  .quick-login-title{font-size:12px;color:#a0aec0;text-align:center;margin-bottom:12px}
+  .quick-btn{padding:6px 14px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;font-size:13px;color:#4a5568;cursor:pointer;transition:all .15s}
+  .quick-btn:hover{background:#667eea;color:#fff;border-color:#667eea}
+  .toast-wrap{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999}
+  .toast-msg{padding:12px 24px;border-radius:12px;background:#1a2238;color:#fff;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.2);animation:slideDown .3s ease}
+  .toast-msg.error{background:#e53e3e}
+  .toast-msg.success{background:#38a169}
+  @keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="login-logo"><i class="bi bi-bank2"></i></div>
+  <div class="login-title">欢迎回来</div>
+  <div class="login-sub">银行记账与理财系统</div>
+
+  <form id="loginForm" onsubmit="return Login.doLogin(event)">
+    <div class="mb-3">
+      <label class="form-label-custom"><i class="bi bi-person"></i> 用户名</label>
+      <input type="text" class="form-control form-control-custom" id="username" placeholder="请输入用户名" autocomplete="username">
+    </div>
+    <div class="mb-4">
+      <label class="form-label-custom"><i class="bi bi-lock"></i> 密码</label>
+      <input type="password" class="form-control form-control-custom" id="password" placeholder="请输入密码" autocomplete="current-password">
+    </div>
+    <button type="submit" class="btn-login" id="loginBtn">登 录</button>
+  </form>
+
+  <div class="quick-login">
+    <div class="quick-login-title">快速登录（演示账号）</div>
+    <div class="d-flex justify-content-center gap-2 flex-wrap">
+      <button class="quick-btn" onclick="Login.quick('zhangsan','123456')">zhangsan</button>
+      <button class="quick-btn" onclick="Login.quick('lisi','123456')">lisi</button>
+      <button class="quick-btn" onclick="Login.quick('wangwu','123456')">wangwu</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const Login = {
+  async doLogin(e){
+    e.preventDefault();
+    const u = document.getElementById('username').value.trim();
+    const p = document.getElementById('password').value.trim();
+    if(!u||!p){ Toast.show('请输入用户名和密码','error'); return; }
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>登录中...';
+    try{
+      const res = await fetch('/api/auth/login',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:u,password:p})
+      });
+      const json = await res.json();
+      if(json.code===200){
+        localStorage.setItem('accessToken',json.data.accessToken);
+        localStorage.setItem('refreshToken',json.data.refreshToken);
+        localStorage.setItem('userInfo',JSON.stringify({userId:json.data.userId,username:json.data.username,realName:json.data.realName}));
+        Toast.show('登录成功','success');
+        setTimeout(()=>{ location.href='/index.html'; },500);
+      }else{
+        Toast.show(json.message||'登录失败','error');
+      }
+    }catch(err){ Toast.show('网络错误','error'); }
+    btn.disabled = false; btn.innerHTML = '登 录';
+  },
+  quick(u,p){
+    document.getElementById('username').value = u;
+    document.getElementById('password').value = p;
+    this.doLogin(new Event('submit'));
+  }
+};
+const Toast = {
+  show(msg,type=''){
+    const el = document.createElement('div');
+    el.className = 'toast-msg '+(type||'');
+    el.textContent = msg;
+    document.getElementById('toastWrap').appendChild(el);
+    setTimeout(()=>el.remove(),2500);
+  }
+};
+document.getElementById('username').focus();
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bank.account.mapper.ProductHoldingMapper">
+
+    <resultMap id="holdingVOMap" type="com.bank.account.vo.HoldingVO">
+        <id property="id" column="id"/>
+        <result property="holdingNo" column="holding_no"/>
+        <result property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="productId" column="product_id"/>
+        <result property="productCode" column="product_code"/>
+        <result property="productName" column="product_name"/>
+        <result property="annualRate" column="annual_rate"/>
+        <result property="accountNo" column="account_no"/>
+        <result property="amount" column="amount"/>
+        <result property="expectedIncome" column="expected_income"/>
+        <result property="actualIncome" column="actual_income"/>
+        <result property="purchaseDate" column="purchase_date"/>
+        <result property="maturityDate" column="maturity_date"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <select id="selectVOByHoldingNo" resultMap="holdingVOMap">
+        SELECT h.id, h.holding_no, h.user_id, u.username,
+               h.product_id, p.product_code, p.product_name, p.product_type, p.annual_rate,
+               a.account_no, h.amount, h.expected_income, h.actual_income,
+               h.purchase_date, h.maturity_date, h.status
+        FROM product_holding h
+        LEFT JOIN sys_user u          ON h.user_id = u.id AND u.deleted = 0
+        LEFT JOIN financial_product p ON h.product_id = p.id AND p.deleted = 0
+        LEFT JOIN account a           ON h.account_id = a.id AND a.deleted = 0
+        WHERE h.holding_no = #{holdingNo}
+          AND h.deleted = 0
+    </select>
+
+    <select id="selectVOPage" resultMap="holdingVOMap">
+        SELECT h.id, h.holding_no, h.user_id, u.username,
+               h.product_id, p.product_code, p.product_name, p.product_type, p.annual_rate,
+               a.account_no, h.amount, h.expected_income, h.actual_income,
+               h.purchase_date, h.maturity_date, h.status
+        FROM product_holding h
+        LEFT JOIN sys_user u          ON h.user_id = u.id AND u.deleted = 0
+        LEFT JOIN financial_product p ON h.product_id = p.id AND p.deleted = 0
+        LEFT JOIN account a           ON h.account_id = a.id AND a.deleted = 0
+        WHERE h.deleted = 0
+        <if test="userId != null">
+            AND h.user_id = #{userId}
+        </if>
+        <if test="status != null">
+            AND h.status = #{status}
+        </if>
+        ORDER BY h.create_time DESC
+    </select>
+
+</mapper>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bank.account.mapper.AccountMapper">
+
+    <!-- 账户 VO 结果映射 -->
+    <resultMap id="accountVOMap" type="com.bank.account.vo.AccountVO">
+        <id property="id" column="id"/>
+        <result property="accountNo" column="account_no"/>
+        <result property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="realName" column="real_name"/>
+        <result property="accountType" column="account_type"/>
+        <result property="balance" column="balance"/>
+        <result property="status" column="status"/>
+        <result property="currency" column="currency"/>
+        <result property="openDate" column="open_date"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <!-- 根据账号查询(带用户信息) -->
+    <select id="selectVOByAccountNo" resultMap="accountVOMap">
+        SELECT a.id, a.account_no, a.user_id, u.username, u.real_name,
+               a.account_type, a.balance, a.status, a.currency,
+               a.open_date, a.create_time
+        FROM account a
+        LEFT JOIN sys_user u ON a.user_id = u.id AND u.deleted = 0
+        WHERE a.account_no = #{accountNo}
+          AND a.deleted = 0
+    </select>
+
+    <!-- 分页查询账户 -->
+    <select id="selectVOPage" resultMap="accountVOMap">
+        SELECT a.id, a.account_no, a.user_id, u.username, u.real_name,
+               a.account_type, a.balance, a.status, a.currency,
+               a.open_date, a.create_time
+        FROM account a
+        LEFT JOIN sys_user u ON a.user_id = u.id AND u.deleted = 0
+        WHERE a.deleted = 0
+        <if test="userId != null">
+            AND a.user_id = #{userId}
+        </if>
+        ORDER BY a.create_time DESC
+    </select>
+
+    <!-- 扣减余额(乐观锁:余额须 >= 金额 且 状态为正常) -->
+    <update id="decreaseBalance">
+        UPDATE account
+        SET balance = balance - #{amount},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND deleted = 0
+          AND status = 1
+          AND balance &gt;= #{amount}
+    </update>
+
+    <!-- 增加余额 -->
+    <update id="increaseBalance">
+        UPDATE account
+        SET balance = balance + #{amount},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND deleted = 0
+          AND status = 1
+    </update>
+
+</mapper>

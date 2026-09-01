@@ -1,0 +1,43 @@
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# ===== Build =====
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# ===== Maven =====
+.mvn/wrapper/maven-wrapper.jar
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Env =====
+.env
+.env.local
+
+# ===== Runtime (local databases, redis data) =====
+data/
+*.pid
+*.seed
+
+# ===== Tools & local artifacts (do NOT commit binaries) =====
+tools/
+
+# ===== Python (if any scripts in root) =====
+.venv/
+__pycache__/
+*.pyc
+
+# ===== Spring Boot =====
+spring-boot-*.log

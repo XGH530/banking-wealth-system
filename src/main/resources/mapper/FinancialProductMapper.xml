@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.bank.account.mapper.FinancialProductMapper">
+
+    <resultMap id="productVOMap" type="com.bank.account.vo.ProductVO">
+        <id property="id" column="id"/>
+        <result property="productCode" column="product_code"/>
+        <result property="productName" column="product_name"/>
+        <result property="productType" column="product_type"/>
+        <result property="annualRate" column="annual_rate"/>
+        <result property="minAmount" column="min_amount"/>
+        <result property="incrementAmount" column="increment_amount"/>
+        <result property="termDays" column="term_days"/>
+        <result property="riskLevel" column="risk_level"/>
+        <result property="totalQuota" column="total_quota"/>
+        <result property="remainingQuota" column="remaining_quota"/>
+        <result property="raiseStartDate" column="raise_start_date"/>
+        <result property="raiseEndDate" column="raise_end_date"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <select id="selectVOPage" resultMap="productVOMap">
+        SELECT id, product_code, product_name, product_type, annual_rate,
+               min_amount, increment_amount, term_days, risk_level,
+               total_quota, remaining_quota, raise_start_date, raise_end_date, status
+        FROM financial_product
+        WHERE deleted = 0
+        <if test="productType != null">
+            AND product_type = #{productType}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 扣减产品剩余额度(乐观锁:剩余额度须 >= 申购金额) -->
+    <update id="decreaseQuota">
+        UPDATE financial_product
+        SET remaining_quota = remaining_quota - #{amount},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND deleted = 0
+          AND remaining_quota &gt;= #{amount}
+    </update>
+
+    <update id="increaseQuota">
+        UPDATE financial_product
+        SET remaining_quota = remaining_quota + #{amount},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND deleted = 0
+    </update>
+
+</mapper>
