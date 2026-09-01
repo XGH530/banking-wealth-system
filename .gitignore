@@ -41,3 +41,8 @@ __pycache__/
 
 # ===== Spring Boot =====
 spring-boot-*.log
+
+# ===== Local config (contains real passwords, NOT committed) =====
+application-local.yml
+application-*.yml
+!application.yml

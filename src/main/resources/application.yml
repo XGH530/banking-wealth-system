@@ -5,11 +5,15 @@ spring:
   application:
     name: bank-account-system
 
+  # 自动加载本地配置(被 .gitignore 排除, 不存在时自动跳过)
+  config:
+    import: "optional:classpath:application-local.yml"
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:bank_account}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:root}
+    password: ${DB_PASSWORD:}
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20
