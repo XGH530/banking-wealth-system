@@ -155,8 +155,8 @@ bank-account-system/
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/YOUR_USERNAME/bank-account-system.git
-cd bank-account-system
+git clone https://github.com/XGH530/banking-wealth-system.git
+cd banking-wealth-system
 
 # 2. 创建数据库并导入
 mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS bank_account DEFAULT CHARSET utf8mb4;"
@@ -281,4 +281,4 @@ public class Result<T> {
 
 ## 📄 License
 
-MIT License © 2026
+MIT License © 2026 xgh
