@@ -1,0 +1,95 @@
+# =====================================================================
+# 银行记账与理财系统 - Docker Compose 一键启动
+# 使用方法:
+#   1. 确保本机已安装 Docker Desktop (Windows/Mac) 或 Docker + docker-compose (Linux)
+#   2. 在项目根目录执行: docker compose up -d
+#   3. 等待约 30 秒, 打开浏览器访问 http://localhost:8080
+#   4. 默认账号: zhangsan / 123456
+#   5. 停止: docker compose down
+#   6. 查看日志: docker compose logs -f app
+# =====================================================================
+
+services:
+  # ---------- MySQL 8.0 ----------
+  mysql:
+    image: mysql:8.0
+    container_name: bank-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root12345
+      MYSQL_DATABASE: bank_account
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      # 数据持久化
+      - mysql-data:/var/lib/mysql
+      # 初始化脚本 (MySQL 首次启动时自动执行)
+      - ./src/main/resources/sql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      - --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot12345"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - bank-net
+
+  # ---------- Redis ----------
+  redis:
+    image: redis:7-alpine
+    container_name: bank-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - bank-net
+
+  # ---------- 应用 ----------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bank-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # 连接 Docker Compose 网络内的服务 (用服务名做 host)
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: bank_account
+      DB_USERNAME: root
+      DB_PASSWORD: root12345
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: bankAccountSystemSecretKeyForJwtSigningPleaseChangeMeInProduction2024
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:8080"
+    networks:
+      - bank-net
+
+# 命名卷 (数据持久化)
+volumes:
+  mysql-data:
+  redis-data:
+
+# 自定义网络
+networks:
+  bank-net:
+    driver: bridge

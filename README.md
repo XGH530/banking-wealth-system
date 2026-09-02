@@ -142,7 +142,67 @@ bank-account-system/
 
 ---
 
-## 🚀 快速开始
+## 🐳 Docker 一键启动（推荐）
+
+> **面试官只需 3 条命令即可完整跑起来！**
+
+### 前置条件
+
+- Docker Desktop（Windows / macOS）或 Docker + Docker Compose（Linux）
+
+### 三命令启动
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/XGH530/banking-wealth-system.git
+cd banking-wealth-system
+
+# 2. 一键启动（Docker Compose 会自动构建镜像 + 启动 MySQL + Redis + App）
+docker compose up -d
+
+# 3. 查看启动进度 (等待约 30 秒看到 "Started BankAccountApplication")
+docker compose logs -f app
+```
+
+启动完成后浏览器打开：**http://localhost:8080**，使用 `zhangsan / 123456` 登录。
+
+### 常用命令
+
+```bash
+# 查看所有容器状态
+docker compose ps
+
+# 停止并清理
+docker compose down
+
+# 停止并删除数据（重置数据库）
+docker compose down -v
+
+# 单独重启某个服务
+docker compose restart app
+
+# 进入应用容器调试
+docker compose exec app sh
+```
+
+### 架构说明
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────────┐
+│   MySQL 8.0 │────▶│   Redis 7   │────▶│ Spring Boot App │
+│ port: 3306  │     │ port: 6379  │     │   port: 8080    │
+└─────────────┘     └─────────────┘     └─────────────────┘
+     volume:            volume:               内置健康检查
+   mysql-data         redis-data           + JRE 17 Alpine
+```
+
+- MySQL 首次启动时自动执行 `src/main/resources/sql/schema.sql` 初始化数据库
+- App 容器通过 `depends_on` + `healthcheck` 等待 MySQL/Redis 就绪后再启动
+- 数据卷持久化：`docker compose down` 不会丢失数据，`docker compose down -v` 才会清除
+
+---
+
+## 🚀 本地开发启动
 
 ### 环境要求
 
