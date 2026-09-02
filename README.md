@@ -304,6 +304,91 @@ mvn spring-boot:run
 
 ---
 
+## ⭐ 架构亮点速览（面试高频考点）
+
+> 以下是本项目在设计和实现上的关键决策，每个点都能在面试中展开讲 3-5 分钟。
+
+### 🔒 JWT 双 Token + Redis 黑名单
+
+```
+登录 → 返回 AccessToken(2h) + RefreshToken(7d)
+AccessToken 过期 → 前端用 RefreshToken 换新 Token (接口 /api/auth/refresh)
+退出登录 → 旧 RefreshToken 写入 Redis 黑名单 (TTL 7d)
+```
+
+- AccessToken 短过期 + RefreshToken 长过期，兼顾安全性和用户体验
+- Refresh 时旧 Token 自动加入黑名单，防止同一 RefreshToken 被重复使用
+- 签名算法 HS512，密钥通过环境变量注入，生产环境可配置化
+
+### 💰 SQL 乐观锁保证余额安全
+
+转账/取款/申购的余额扣减不是先查后改（易引发并发超扣），而是直接走 SQL：
+
+```sql
+UPDATE account SET balance = balance - #{amount}, update_time = NOW()
+WHERE id = #{id} AND balance >= #{amount} AND status = 1
+```
+
+- `affected rows = 0` 说明余额不足或账户异常，上层直接抛业务异常
+- 无 `SELECT ... FOR UPDATE` 行锁，不阻塞其他账户操作
+- 高并发下仍然安全，性能显著优于悲观锁
+
+### 📦 @Transactional 事务一致性
+
+转账操作需要同时做 3 件事：**扣 A 的钱 → 加 B 的钱 → 写两条流水**。任何一步失败全部回滚：
+
+```java
+@Transactional(rollbackFor = Exception.class)
+public TransactionVO transfer(TransferDTO dto) {
+    // 扣 A
+    accountMapper.decreaseBalance(...);
+    // 加 B
+    accountMapper.increaseBalance(...);
+    // 写流水 (A 转出 + B 转入)
+    txnMapper.insert(...);
+    txnMapper.insert(...);
+}
+```
+
+### ⚡ Redis 缓存 + 主动淘汰策略
+
+账户详情、理财产品列表走 Redis 缓存，减少 MySQL 压力。写操作后**主动 delete 缓存**，而不是设置过期等待自动失效：
+
+```
+读: 先查 Redis → 命中返回 → 未命中查 MySQL → 写回 Redis
+写: 改完 MySQL → 立即 delete Redis 缓存
+```
+
+这种模式叫 **Cache-Aside Pattern（旁路缓存）**，一致性比 TTL 过期好，延迟比 Write-Through 低。
+
+### 🔐 BCrypt 密码加密
+
+注册时用 BCrypt.hashpw 加密密码存入数据库，登录时用 BCrypt.checkpw 校验。相比 MD5/SHA256：
+- BCrypt 自带随机 salt，即使同密码 hash 结果也不同
+- 计算成本可调节（本项目 cost=10），抗暴力破解
+
+### 🐳 Docker Compose 一键启动
+
+面试官克隆后只需 `docker compose up -d` 即可看到完整系统运行：
+- MySQL 自动执行 `schema.sql` 初始化测试数据
+- Redis 缓存服务容器化
+- App 容器通过 `healthcheck` + `depends_on` 等依赖就绪后启动
+- 数据卷持久化，down 不丢数据
+
+### 🧪 单元测试覆盖核心链路
+
+```bash
+mvn test
+# Tests run: 10, Failures: 0
+```
+
+- AuthService：登录成功/用户不存在/密码错误
+- TransactionService：同账号转账/限额超限/账户不存在/余额不足
+- HoldingService：产品不存在/金额不足/非本人账户
+- 纯 Mockito 实现，不依赖 Spring 容器，秒级运行
+
+---
+
 ## 🧱 核心设计要点
 
 ### 1. 统一响应体
