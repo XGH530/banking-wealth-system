@@ -156,6 +156,7 @@ body{font-family:'Microsoft YaHei','Segoe UI',sans-serif;background:var(--bg);co
 .nav button{width:40px;height:40px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .nav button:hover{background:var(--cyan);color:var(--bg);border-color:var(--cyan)}
 .nav .counter{color:var(--dim);font-size:.85rem;min-width:50px;text-align:center}
+.click-hint{position:fixed;bottom:28px;left:24px;color:var(--dim);font-size:.78rem;z-index:100;opacity:.65;letter-spacing:.5px}
 
 /* 进度条 */
 .progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--cyan),var(--green),var(--purple));transition:width .4s;z-index:100}
@@ -287,7 +288,7 @@ body{font-family:'Microsoft YaHei','Segoe UI',sans-serif;background:var(--bg);co
 <li><span class="em">@Transactional</span> 转账事务一致性</li>
 <li><span class="em">Docker Compose</span> 一键启动全部依赖</li>
 </ul>
-<div style="margin-top:14px;text-align:center">
+<div class="no-advance" style="margin-top:14px;text-align:center">
 <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=http://8.133.222.0:8080&color=000000&bgcolor=ffffff" width="100" height="100" style="border:1px solid var(--border);border-radius:8px;padding:4px;background:#fff" alt="扫码访问银行系统"/>
 <div style="font-size:.75rem;color:var(--dim);margin-top:4px">📱 扫码访问 → 8.133.222.0:8080</div>
 </div>
@@ -405,6 +406,7 @@ body{font-family:'Microsoft YaHei','Segoe UI',sans-serif;background:var(--bg);co
 <span class="counter" id="counter">1 / 8</span>
 <button onclick="next()">▶</button>
 </div>
+<div class="click-hint">💡 点击页面任意位置翻页 · ← → 键也可 · F 全屏</div>
 
 <script>
 let cur=0;
@@ -431,6 +433,13 @@ if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev()}
 if(e.key==='Home')show(0);
 if(e.key==='End')show(total-1);
 if(e.key==='f'||e.key==='F')document.documentElement.requestFullscreen();
+});
+
+// 点击页面任意位置翻到下一页（点击链接、按钮、二维码区域、选中文字时不触发）
+document.addEventListener('click',e=>{
+  if(e.target.closest('a,button,input,textarea,select,.no-advance'))return;
+  if(window.getSelection&&window.getSelection().toString())return;
+  next();
 });
 
 function animateSkills(){
