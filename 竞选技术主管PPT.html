@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>技术主管竞选 - 向国豪</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#060912;
+--card:#0d1421;
+--card2:#111c2e;
+--border:#1c2d47;
+--cyan:#00d4ff;
+--green:#00e676;
+--purple:#7c4dff;
+--orange:#ff9100;
+--pink:#ff5252;
+--text:#d4e0f0;
+--dim:#54687e;
+}
+body{font-family:'Microsoft YaHei','Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+
+/* 背景网格 */
+.bg-grid{position:fixed;inset:0;z-index:0;opacity:.4;background-image:linear-gradient(rgba(0,212,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.06) 1px,transparent 1px);background-size:50px 50px;mask-image:radial-gradient(ellipse 80% 60% at 50% 50%,#000 0%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 50%,#000 0%,transparent 100%)}
+.bg-glow{position:fixed;width:600px;height:600px;border-radius:50%;filter:blur(120px);opacity:.12;z-index:0}
+.glow1{background:var(--cyan);top:-200px;left:-100px}
+.glow2{background:var(--purple);bottom:-200px;right:-100px}
+
+.deck{width:100vw;height:100vh;position:relative;z-index:2}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center;padding:50px 70px}
+.slide.active{display:flex;animation:fadeUp .5s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* 标题 */
+.s-title{font-size:2rem;font-weight:700;margin-bottom:6px;text-align:center}
+.s-title .accent{background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.s-subtitle{font-size:.95rem;color:var(--dim);margin-bottom:36px;text-align:center}
+.s-title::after{content:'';display:block;width:50px;height:3px;background:linear-gradient(90deg,var(--cyan),var(--purple));margin:14px auto 0;border-radius:2px}
+
+/* ====== P1 封面 ====== */
+.cover-hero{text-align:center;position:relative}
+.cover-hero .badge{display:inline-block;padding:6px 18px;border:1px solid var(--border);border-radius:20px;font-size:.8rem;color:var(--dim);margin-bottom:30px}
+.cover-hero h1{font-size:3.2rem;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--green),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px;letter-spacing:2px}
+.cover-hero .slogan{font-size:1.2rem;color:var(--dim);margin-bottom:50px}
+.cover-hero .name-block{font-size:1.5rem;color:var(--text);margin-bottom:6px}
+.cover-hero .name-block .arrow{color:var(--green)}
+.cover-hero .meta{font-size:.95rem;color:var(--dim)}
+.cover-terminal{margin-top:40px;font-family:'Cascadia Code','JetBrains Mono','Courier New',monospace;font-size:.85rem;color:var(--dim);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px 24px;max-width:560px;text-align:left}
+.cover-terminal .prompt{color:var(--green)}
+.cover-terminal .out{color:var(--cyan)}
+
+/* ====== P2 自我介绍 ====== */
+.about-wrap{display:flex;gap:50px;max-width:900px;width:100%;align-items:center}
+.about-left{text-align:center;flex-shrink:0}
+.about-left .avatar{width:130px;height:130px;border-radius:24px;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;font-size:3rem;font-weight:800;color:var(--bg);margin:0 auto 16px;box-shadow:0 8px 32px rgba(0,212,255,.3)}
+.about-left .nm{font-size:1.5rem;font-weight:700}
+.about-left .role{font-size:.9rem;color:var(--cyan);margin-top:4px}
+.about-right{flex:1}
+.about-row{display:flex;align-items:flex-start;gap:16px;margin-bottom:18px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:10px;transition:all .3s}
+.about-row:hover{border-color:var(--cyan);background:var(--card2);transform:translateX(4px)}
+.about-row .ic{font-size:1.4rem;flex-shrink:0;width:32px;text-align:center}
+.about-row .ct{flex:1}
+.about-row .lb{font-size:.78rem;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.about-row .vl{font-size:1rem;color:var(--text);line-height:1.5}
+.about-row .vl .hl{color:var(--green)}
+.about-row .vl .hl2{color:var(--cyan)}
+
+/* ====== P3 技术栈雷达 ====== */
+.radar-wrap{display:flex;gap:40px;max-width:900px;width:100%;align-items:center;justify-content:center}
+.radar-chart{position:relative;width:300px;height:300px;flex-shrink:0}
+.radar-chart svg{width:100%;height:100%}
+.radar-info{flex:1;max-width:400px}
+.radar-info .ri-title{font-size:1.1rem;color:var(--cyan);margin-bottom:16px;font-weight:700}
+.skill-bar{margin-bottom:14px}
+.skill-bar .sb-head{display:flex;justify-content:space-between;margin-bottom:4px}
+.skill-bar .sb-name{font-size:.9rem;color:var(--text)}
+.skill-bar .sb-pct{font-size:.85rem;color:var(--green);font-weight:700}
+.skill-bar .sb-track{height:8px;background:var(--card);border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+.skill-bar .sb-fill{height:100%;border-radius:4px;width:0;transition:width 1s ease}
+.sb-fill.f1{background:linear-gradient(90deg,var(--cyan),var(--green))}
+.sb-fill.f2{background:linear-gradient(90deg,var(--purple),var(--cyan))}
+.sb-fill.f3{background:linear-gradient(90deg,var(--orange),var(--pink))}
+.sb-fill.f4{background:linear-gradient(90deg,var(--green),var(--cyan))}
+
+/* ====== P4 项目展示 ====== */
+.proj-grid{display:flex;gap:24px;max-width:900px;width:100%}
+.proj-card{flex:1;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;transition:all .3s;cursor:pointer;position:relative;overflow:hidden}
+.proj-card:hover{border-color:var(--cyan);box-shadow:0 8px 40px rgba(0,212,255,.12);transform:translateY(-4px)}
+.proj-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px}
+.proj-card.pc1::before{background:linear-gradient(90deg,var(--cyan),var(--green))}
+.proj-card.pc2::before{background:linear-gradient(90deg,var(--orange),var(--pink))}
+.proj-card .pc-title{font-size:1.15rem;font-weight:700;margin-bottom:6px;color:var(--text)}
+.proj-card .pc-stack{font-size:.8rem;color:var(--dim);margin-bottom:16px}
+.proj-card .pc-link{font-size:.8rem;margin-bottom:16px}
+.proj-card .pc-link a{color:var(--cyan);text-decoration:none;border-bottom:1px dashed rgba(0,212,255,.4)}
+.proj-card .pc-link a:hover{color:var(--green)}
+.proj-card ul{list-style:none}
+.proj-card li{font-size:.88rem;color:var(--text);margin-bottom:8px;padding-left:18px;position:relative;line-height:1.5}
+.proj-card li::before{content:'▸';position:absolute;left:0;color:var(--cyan)}
+.proj-card li .em{color:var(--green);font-weight:600}
+
+/* ====== P5 数字战绩 ====== */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:800px;width:100%}
+.stat-box{text-align:center;padding:24px 16px;background:var(--card);border:1px solid var(--border);border-radius:12px;transition:all .3s;position:relative;overflow:hidden}
+.stat-box::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--cyan),var(--purple))}
+.stat-box:hover{transform:translateY(-4px);border-color:var(--cyan)}
+.stat-box .sb-num{font-size:2.6rem;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-box .sb-label{font-size:.88rem;color:var(--dim);margin-top:4px}
+.code-snippet{margin-top:30px;font-family:'Cascadia Code','Courier New',monospace;font-size:.85rem;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px 24px;max-width:640px;text-align:left}
+.code-snippet .cmd{color:var(--green)}
+.code-snippet .cmt{color:var(--dim)}
+.code-snippet .url{color:var(--cyan)}
+
+/* ====== P6 竞选理由 ====== */
+.reasons-wrap{max-width:800px;width:100%}
+.reason-card{display:flex;gap:20px;align-items:flex-start;padding:22px 26px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;transition:all .3s;position:relative;overflow:hidden}
+.reason-card::before{content:'';position:absolute;left:0;top:0;width:4px;height:100%}
+.reason-card.rc1::before{background:var(--green);box-shadow:0 0 12px var(--green)}
+.reason-card.rc2::before{background:var(--cyan);box-shadow:0 0 12px var(--cyan)}
+.reason-card.rc3::before{background:var(--purple);box-shadow:0 0 12px var(--purple)}
+.reason-card:hover{background:var(--card2);transform:translateX(6px)}
+.reason-card .rc-num{font-size:1.8rem;font-weight:800;flex-shrink:0;width:44px;text-align:center}
+.rc1 .rc-num{color:var(--green)}
+.rc2 .rc-num{color:var(--cyan)}
+.rc3 .rc-num{color:var(--purple)}
+.reason-card .rc-body h3{font-size:1.05rem;margin-bottom:4px;color:var(--text)}
+.reason-card .rc-body p{font-size:.92rem;color:var(--dim);line-height:1.6}
+.reason-card .rc-body p .hl{color:var(--text);font-weight:600}
+
+/* ====== P7 上任愿景 ====== */
+.vision-wrap{max-width:800px;width:100%}
+.vision-step{display:flex;align-items:center;gap:18px;margin-bottom:12px;padding:16px 22px;background:var(--card);border:1px solid var(--border);border-radius:12px;transition:all .3s}
+.vision-step:hover{border-color:var(--cyan);transform:scale(1.01)}
+.vision-step .vs-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.vs-icon.vi1{background:rgba(0,212,255,.12);border:1px solid var(--cyan)}
+.vs-icon.vi2{background:rgba(0,230,118,.12);border:1px solid var(--green)}
+.vs-icon.vi3{background:rgba(124,77,255,.12);border:1px solid var(--purple)}
+.vision-step .vs-body h3{font-size:1rem;margin-bottom:2px;color:var(--text)}
+.vision-step .vs-body p{font-size:.85rem;color:var(--dim);line-height:1.5}
+.vision-step .vs-body p .hl{color:var(--green);font-weight:600}
+
+/* ====== P8 结尾 ====== */
+.finale{text-align:center}
+.finale h1{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--green),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:24px}
+.finale .quote{font-size:1.15rem;color:var(--dim);margin-bottom:36px;max-width:600px;line-height:1.7}
+.finale .quote .hl{color:var(--cyan);font-weight:700}
+.finale .contact-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px 40px;display:inline-block}
+.finale .contact-box .cb-name{font-size:1.3rem;font-weight:700;margin-bottom:10px}
+.finale .contact-box a{color:var(--cyan);text-decoration:none;font-size:.9rem;line-height:2}
+.finale .contact-box a:hover{color:var(--green)}
+.finale .contact-box .demo{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:.85rem;color:var(--dim)}
+
+/* ====== 导航 ====== */
+.nav{position:fixed;bottom:20px;right:24px;display:flex;gap:10px;align-items:center;z-index:100}
+.nav button{width:40px;height:40px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.nav button:hover{background:var(--cyan);color:var(--bg);border-color:var(--cyan)}
+.nav .counter{color:var(--dim);font-size:.85rem;min-width:50px;text-align:center}
+
+/* 进度条 */
+.progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--cyan),var(--green),var(--purple));transition:width .4s;z-index:100}
+
+/* 页码时间 */
+.page-info{position:fixed;bottom:24px;left:24px;z-index:100;color:var(--dim);font-size:.8rem}
+.page-info b{color:var(--green)}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow glow1"></div>
+<div class="bg-glow glow2"></div>
+<div class="progress" id="progress" style="width:12.5%"></div>
+<div class="deck" id="deck">
+
+<!-- ====== P1: 封面 ====== -->
+<div class="slide active">
+<div class="cover-hero">
+<h1>用代码重构运营，用技术驱动项目</h1>
+<div class="slogan">Java 后端全栈开发 · 阿里云部署实战 · Docker 工程化</div>
+<div class="name-block"><span class="arrow">➜</span> 向国豪</div>
+<div class="meta">计算机科学与技术 · 2027 届</div>
+</div>
+</div>
+
+<!-- ====== P2: 自我介绍 ====== -->
+<div class="slide">
+<div class="s-title">我是谁</div>
+<div class="s-subtitle">四个标签认识我</div>
+<div class="about-wrap">
+<div class="about-left">
+<div class="avatar">向</div>
+<div class="nm">向国豪</div>
+<div class="role">Full-Stack Developer</div>
+</div>
+<div class="about-right">
+<div class="about-row">
+<div class="ic">💻</div>
+<div class="ct">
+<div class="lb">技术栈</div>
+<div class="vl"><span class="hl2">Java Spring Boot</span> + Python + Docker + MySQL + Redis</div>
+</div>
+</div>
+<div class="about-row">
+<div class="ic">🚀</div>
+<div class="ct">
+<div class="lb">项目实战</div>
+<div class="vl">银行理财系统（<span class="hl">公网部署</span>）+ 智慧园林可视化平台</div>
+</div>
+</div>
+<div class="about-row">
+<div class="ic">🏢</div>
+<div class="ct">
+<div class="lb">企业实习</div>
+<div class="vl"><span class="hl2">宁夏瑞创科贸公司</span> Java 后端实习生 + 污水处理厂项目部</div>
+</div>
+</div>
+<div class="about-row">
+<div class="ic">⚡</div>
+<div class="ct">
+<div class="lb">核心特质</div>
+<div class="vl">能独立走完 <span class="hl">需求→开发→测试→部署→上线</span> 全流程</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ====== P3: 技术栈雷达 ====== -->
+<div class="slide">
+<div class="s-title">我的<span class="accent">技术底座</span></div>
+<div class="radar-wrap">
+<div class="radar-chart">
+<svg viewBox="0 0 300 300">
+<!-- 雷达网格 -->
+<polygon points="150,30 257,95 235,225 65,225 43,95" fill="none" stroke="#1c2d47" stroke-width="1.5"/>
+<polygon points="150,60 228,108 213,210 87,210 72,108" fill="none" stroke="#1c2d47" stroke-width="1.2"/>
+<polygon points="150,90 200,121 190,195 110,195 100,121" fill="none" stroke="#1c2d47" stroke-width="1"/>
+<polygon points="150,120 172,134 167,180 133,180 128,134" fill="none" stroke="#1c2d47" stroke-width="0.8"/>
+<!-- 轴线 -->
+<line x1="150" y1="30" x2="150" y2="270" stroke="#1c2d47" stroke-width="1"/>
+<line x1="257" y1="95" x2="43" y2="195" stroke="#1c2d47" stroke-width="1"/>
+<line x1="235" y1="225" x2="65" y2="105" stroke="#1c2d47" stroke-width="1"/>
+<line x1="65" y1="225" x2="235" y2="105" stroke="#1c2d47" stroke-width="1"/>
+<line x1="43" y1="95" x2="257" y2="195" stroke="#1c2d47" stroke-width="1"/>
+<!-- 数据区域 -->
+<polygon id="radar-data" points="150,35 245,100 215,210 75,200 55,110" fill="rgba(0,212,255,.15)" stroke="#00d4ff" stroke-width="2" style="filter:drop-shadow(0 0 8px rgba(0,212,255,.4))"/>
+<!-- 数据点 -->
+<circle cx="150" cy="35" r="4" fill="#00e676"/>
+<circle cx="245" cy="100" r="4" fill="#00d4ff"/>
+<circle cx="215" cy="210" r="4" fill="#7c4dff"/>
+<circle cx="75" cy="200" r="4" fill="#ff9100"/>
+<circle cx="55" cy="110" r="4" fill="#ff5252"/>
+<!-- 标签 -->
+<text x="150" y="18" text-anchor="middle" fill="#d4e0f0" font-size="13" font-weight="700">后端开发</text>
+<text x="270" y="95" text-anchor="middle" fill="#d4e0f0" font-size="13" font-weight="700">部署运维</text>
+<text x="248" y="240" text-anchor="middle" fill="#d4e0f0" font-size="13" font-weight="700">数据库</text>
+<text x="52" y="240" text-anchor="middle" fill="#d4e0f0" font-size="13" font-weight="700">项目管理</text>
+<text x="30" y="95" text-anchor="middle" fill="#d4e0f0" font-size="13" font-weight="700">前端/全栈</text>
+</svg>
+</div>
+<div class="radar-info">
+<div class="ri-title">核心技能矩阵</div>
+<div class="skill-bar"><div class="sb-head"><span class="sb-name">Java / Spring Boot</span><span class="sb-pct">90%</span></div><div class="sb-track"><div class="sb-fill f1" data-w="90%"></div></div></div>
+<div class="skill-bar"><div class="sb-head"><span class="sb-name">MySQL / Redis</span><span class="sb-pct">85%</span></div><div class="sb-track"><div class="sb-fill f2" data-w="85%"></div></div></div>
+<div class="skill-bar"><div class="sb-head"><span class="sb-name">Docker / Linux</span><span class="sb-pct">80%</span></div><div class="sb-track"><div class="sb-fill f3" data-w="80%"></div></div></div>
+<div class="skill-bar"><div class="sb-head"><span class="sb-name">Python / 数据可视化</span><span class="sb-pct">75%</span></div><div class="sb-track"><div class="sb-fill f4" data-w="75%"></div></div></div>
+</div>
+</div>
+</div>
+
+<!-- ====== P4: 项目展示 ====== -->
+<div class="slide">
+<div class="s-title">我的<span class="accent">技术实力</span></div>
+<div class="s-subtitle">不是 PPT 项目 — 扫码即可访问</div>
+<div class="proj-grid">
+<div class="proj-card pc1">
+<div class="pc-title">🏦 银行记账与理财系统</div>
+<div class="pc-stack">Spring Boot 3 · MyBatis-Plus · Redis · JWT · Docker</div>
+<div class="pc-link">
+<a href="https://github.com/XGH530/banking-wealth-system" target="_blank" rel="noopener">GitHub ↗</a>
+| <a href="http://8.133.222.0:8080" target="_blank" rel="noopener">线上演示 ↗</a>
+</div>
+<ul>
+<li><span class="em">JWT 双Token</span> + Redis 黑名单防重放</li>
+<li><span class="em">SQL 乐观锁</span> 保证余额并发安全</li>
+<li><span class="em">@Transactional</span> 转账事务一致性</li>
+<li><span class="em">Docker Compose</span> 一键启动全部依赖</li>
+</ul>
+<div style="margin-top:14px;text-align:center">
+<img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=http://8.133.222.0:8080&color=000000&bgcolor=ffffff" width="100" height="100" style="border:1px solid var(--border);border-radius:8px;padding:4px;background:#fff" alt="扫码访问银行系统"/>
+<div style="font-size:.75rem;color:var(--dim);margin-top:4px">📱 扫码访问 → 8.133.222.0:8080</div>
+</div>
+</div>
+<div class="proj-card pc2">
+<div class="pc-title">🌳 智慧园林可视化平台</div>
+<div class="pc-stack">Python · Streamlit · 数据可视化</div>
+<div class="pc-link" style="visibility:hidden">占位</div>
+<ul>
+<li><span class="em">交互式 Web 大屏</span> 数据驱动决策</li>
+<li><span class="em">数据处理</span> + 前端渲染全流程</li>
+<li>把巡检数据变成<span class="em">可视化报表</span></li>
+<li><span class="em">独立完成</span> 从设计到部署</li>
+</ul>
+</div>
+</div>
+</div>
+
+<!-- ====== P5: 数字战绩 ====== -->
+<div class="slide">
+<div class="s-title">用<span class="accent">数字</span>说话</div>
+<div class="stats-grid">
+<div class="stat-box"><div class="sb-num">2</div><div class="sb-label">公网可访问项目</div></div>
+<div class="stat-box"><div class="sb-num">20+</div><div class="sb-label">RESTful API 接口</div></div>
+<div class="stat-box"><div class="sb-num">10</div><div class="sb-label">单元测试全通过</div></div>
+<div class="stat-box"><div class="sb-num">3</div><div class="sb-label">Docker 容器编排</div></div>
+<div class="stat-box"><div class="sb-num">2</div><div class="sb-label">企业实习经历</div></div>
+<div class="stat-box"><div class="sb-num">1</div><div class="sb-label">阿里云 ECS 部署</div></div>
+</div>
+<div class="code-snippet">
+<span class="cmd">$</span> git clone <span class="url">github.com/XGH530/banking-wealth-system</span><br>
+<span class="cmd">$</span> docker compose up -d <span class="cmt"># 30秒后浏览器打开 → 登录成功</span>
+</div>
+</div>
+
+<!-- ====== P6: 为什么选我 ====== -->
+<div class="slide">
+<div class="s-title">为什么<span class="accent">选我</span></div>
+<div class="reasons-wrap">
+<div class="reason-card rc1">
+<div class="rc-num">01</div>
+<div class="rc-body">
+<h3>交付力：产品级实战</h3>
+<p>银行系统<span class="hl">阿里云在线运行</span> + GitHub 完整开源。拒绝"写完即弃"，追求代码的<span class="hl">可维护性与工程化标准</span>。</p>
+</div>
+</div>
+<div class="reason-card rc2">
+<div class="rc-num">02</div>
+<div class="rc-body">
+<h3>技术栈：全栈 + DevOps</h3>
+<p>SpringBoot/Python 只是基础，<span class="hl">Docker/Git/自动化测试</span>才是核心。能独立搞定<span class="hl">从开发到部署的全流程</span>，降低团队沟通成本。</p>
+</div>
+</div>
+<div class="reason-card rc3">
+<div class="rc-num">03</div>
+<div class="rc-body">
+<h3>复合力：技术 + 管理双修</h3>
+<p><span class="hl">宁夏瑞创科贸</span>实习经历 + 120人团队统筹经验。既能沉下心写核心代码，也能抬起头协调资源，<span class="hl">完美匹配技术经理岗位</span>。</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ====== P7: 上任愿景 ====== -->
+<div class="slide">
+<div class="s-title">如果我是<span class="accent">技术主管</span></div>
+<div class="vision-wrap" style="max-width:860px">
+<div class="vision-step">
+<div class="vs-icon vi1">🗂️</div>
+<div class="vs-body">
+<h3>代码洁癖：建立 Git 工作流</h3>
+<p>统一规范，定期 Review。我不希望看到满屏的 <span class="hl" style="color:var(--cyan)">test1, final_v2</span>，我们要追求代码的<span class="hl" style="color:var(--cyan)">艺术感</span>。</p>
+</div>
+</div>
+<div class="vision-step">
+<div class="vs-icon vi2">🐳</div>
+<div class="vs-body">
+<h3>环境神器：Docker 一键部署</h3>
+<p>消灭环境差异。你的时间应该用来<span class="hl" style="color:var(--green)">改变世界</span>，而不是用来<span class="hl" style="color:var(--green)">配环境变量</span>。</p>
+</div>
+</div>
+<div class="vision-step">
+<div class="vs-icon vi3">📊</div>
+<div class="vs-body">
+<h3>拒绝黑盒：进度可视化</h3>
+<p>谁在 CARRY，谁在 OB，看板上见分晓。让<span class="hl" style="color:var(--purple)">努力的人被看见</span>，让划水的人无处遁形。</p>
+</div>
+</div>
+<div class="vision-step">
+<div class="vs-icon vi4" style="background:rgba(255,146,0,.12);border:1px solid var(--orange)">🎮</div>
+<div class="vs-body">
+<h3>彩蛋：我是全能型队友</h3>
+<p>代码写得溜，王者打得秀。遇到技术瓶颈我是你的<span class="hl" style="color:var(--orange)">导师</span>，电脑蓝屏我是你的<span class="hl" style="color:var(--orange)">网管</span>，周末开黑我是你的<span class="hl" style="color:var(--orange)">强力射手</span>。</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- ====== P8: 结尾 ====== -->
+<div class="slide finale">
+<h1>谢谢</h1>
+<div class="quote">"技术主管不是写代码最快的人，<br>是能让团队<span class="hl">写出好代码</span>的人。"</div>
+<div class="contact-box">
+<div class="cb-name">向国豪</div>
+<a href="https://github.com/XGH530/banking-wealth-system" target="_blank" rel="noopener">GitHub: github.com/XGH530/banking-wealth-system ↗</a><br>
+<a href="http://8.133.222.0:8080" target="_blank" rel="noopener">线上演示: 8.133.222.0:8080 ↗</a>
+<div class="demo">计算机科学与技术 · 2027届 · 现场可打开演示</div>
+</div>
+</div>
+
+</div>
+
+<div class="nav">
+<button onclick="prev()">◀</button>
+<span class="counter" id="counter">1 / 8</span>
+<button onclick="next()">▶</button>
+</div>
+
+<script>
+let cur=0;
+const slides=document.querySelectorAll('.slide');
+const total=slides.length;
+const counter=document.getElementById('counter');
+const progress=document.getElementById('progress');
+const infos=['','','','','','','',''];
+
+function show(i){
+slides[cur].classList.remove('active');
+cur=(i+total)%total;
+slides[cur].classList.add('active');
+counter.textContent=(cur+1)+' / '+total;
+progress.style.width=((cur+1)/total*100)+'%';
+// 技能条动画
+if(cur===2){animateSkills()}
+}
+function next(){if(cur<total-1)show(cur+1)}
+function prev(){if(cur>0)show(cur-1)}
+document.addEventListener('keydown',e=>{
+if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){e.preventDefault();next()}
+if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();prev()}
+if(e.key==='Home')show(0);
+if(e.key==='End')show(total-1);
+if(e.key==='f'||e.key==='F')document.documentElement.requestFullscreen();
+});
+
+function animateSkills(){
+document.querySelectorAll('.sb-fill').forEach(f=>{
+f.style.width='0';
+setTimeout(()=>f.style.width=f.dataset.w,200);
+});
+}
+</script>
+</body>
+</html>
