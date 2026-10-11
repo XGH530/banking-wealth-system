@@ -1,10 +1,12 @@
 # 🏦 Bank Account System · 银行记账与理财系统
 
 > 一个基于 **Spring Boot 3.2 + MyBatis-Plus + Redis + JWT** 构建的全栈银行核心业务模拟系统，包含账户管理、交易流水、理财产品申购/赎回等完整业务场景，内置响应式前端 SPA。
+>
+> 🔗 **在线演示**：<http://8.133.222.0:8080> ｜ 演示账号 `zhangsan` / `123456` ｜ 接口文档 <http://8.133.222.0:8080/doc.html>
 
 ![Java](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.5-6DB33F?logo=springboot&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-5.7+-4479A1?logo=mysql&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-Latest-DC382D?logo=redis&logoColor=white)
 ![MyBatis-Plus](https://img.shields.io/badge/MyBatis--Plus-3.5-229639)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -132,7 +134,7 @@ bank-account-system/
 | 语言 | Java | 17 | LTS，Records/Pattern Matching |
 | 框架 | Spring Boot | 3.2.5 | Web / Validation / AOP |
 | ORM | MyBatis-Plus | 3.5.5 | 单表 CRUD / 分页插件 / 乐观锁 |
-| 数据库 | MySQL | 5.7+ / 8.0+ | HikariCP 连接池 |
+| 数据库 | MySQL | 8.0 | HikariCP 连接池 |
 | 缓存 | Redis | - | Lettuce 客户端 |
 | 鉴权 | JWT (jjwt) | 0.12.5 | HS512 + Access/Refresh 双 Token |
 | 加密 | Spring Crypto | - | BCryptPasswordEncoder |
@@ -144,7 +146,7 @@ bank-account-system/
 
 ## 🐳 Docker 一键启动（推荐）
 
-> **面试官只需 3 条命令即可完整跑起来！**
+> **三条命令即可完整启动**：Compose 会自动构建镜像、初始化数据库、等待依赖就绪。
 
 ### 前置条件
 
@@ -208,7 +210,7 @@ docker compose exec app sh
 
 - **JDK 17** 或更高
 - **Maven 3.8+**
-- **MySQL 5.7+ / 8.0+**（密码设为 `root` 或自行修改配置）
+- **MySQL 8.0**（密码设为 `root` 或自行修改配置）
 - **Redis**（默认端口 6379，无密码）
 
 ### 启动步骤
@@ -304,9 +306,9 @@ mvn spring-boot:run
 
 ---
 
-## ⭐ 架构亮点速览（面试高频考点）
+## ⭐ 架构亮点
 
-> 以下是本项目在设计和实现上的关键决策，每个点都能在面试中展开讲 3-5 分钟。
+> 以下是本项目在设计和实现上的关键决策。
 
 ### 🔒 JWT 双 Token + Redis 黑名单
 
@@ -369,7 +371,7 @@ public TransactionVO transfer(TransferDTO dto) {
 
 ### 🐳 Docker Compose 一键启动
 
-面试官克隆后只需 `docker compose up -d` 即可看到完整系统运行：
+克隆后只需 `docker compose up -d` 即可看到完整系统运行：
 - MySQL 自动执行 `schema.sql` 初始化测试数据
 - Redis 缓存服务容器化
 - App 容器通过 `healthcheck` + `depends_on` 等依赖就绪后启动

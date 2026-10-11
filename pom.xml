@@ -15,7 +15,7 @@
     <artifactId>account-system</artifactId>
     <version>1.0.0</version>
     <name>bank-account-system</name>
-    <description>模拟银行记账与理财系统 - 简历项目</description>
+    <description>模拟银行记账与理财系统的后端服务</description>
 
     <properties>
         <java.version>17</java.version>

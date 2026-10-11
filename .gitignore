@@ -46,3 +46,10 @@ spring-boot-*.log
 application-local.yml
 application-*.yml
 !application.yml
+
+# ===== 个人文件（不属于项目，勿提交）=====
+~$*
+*.docx
+*.pdf
+ppt.html
+竞选技术主管PPT*.html

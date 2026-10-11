@@ -1,7 +1,7 @@
 # =====================================================================
 # 银行记账与理财系统 - Docker Compose 一键启动
 # 使用方法:
-#   1. 确保本机已安装 Docker Desktop (Windows/Mac) 或 Docker + docker-compose (Linux)
+#   1. 确保已安装 Docker Desktop (Windows/Mac) 或 Docker + docker-compose (Linux)
 #   2. 在项目根目录执行: docker compose up -d
 #   3. 等待约 30 秒, 打开浏览器访问 http://localhost:8080
 #   4. 默认账号: zhangsan / 123456
