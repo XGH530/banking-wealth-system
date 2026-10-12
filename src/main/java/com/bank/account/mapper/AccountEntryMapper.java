@@ -31,19 +31,26 @@ public interface AccountEntryMapper extends BaseMapper<AccountEntry> {
     /**
      * 余额对账:找出「账户余额 != Σ贷 - Σ借」的账户
      *
+     * 注意:HAVING / ORDER BY 里不要直接引用 SELECT 中的聚合别名(如 ledgerNet):
+     *      MySQL 8 会报 "Reference 'ledgerNet' not supported"(引用分组函数),而 5.7 却能通过 ——
+     *      所以这里改成"派生表里算出 diff,外层再过滤",5.7 / 8.0 都安全。
+     *
      * 【为什么这个查询有价值】它不信任应用层的记账代码,
      * 而是用分录(账)反推余额,和余额字段(实)直接对撞。
      * 只要有一天有人漏写分录、重复写分录、或绕过服务层改余额,这里立刻暴露。
      */
-    @Select("SELECT a.account_no AS accountNo, a.balance AS balance, "
-            + "       IFNULL(SUM(CASE WHEN e.direction = 2 THEN e.amount ELSE -e.amount END), 0) AS ledgerNet, "
-            + "       COUNT(e.id) AS entryCount "
-            + "FROM account a "
-            + "LEFT JOIN account_entry e ON e.account_id = a.id "
-            + "WHERE a.deleted = 0 "
-            + "GROUP BY a.id, a.account_no, a.balance "
-            + "HAVING ABS(a.balance - ledgerNet) > 0.001 "
-            + "ORDER BY ABS(a.balance - ledgerNet) DESC "
+    @Select("SELECT t.accountNo, t.balance, t.ledgerNet, t.entryCount, t.diff FROM ("
+            + "  SELECT a.account_no AS accountNo, a.balance AS balance, "
+            + "         IFNULL(SUM(CASE WHEN e.direction = 2 THEN e.amount ELSE -e.amount END), 0) AS ledgerNet, "
+            + "         COUNT(e.id) AS entryCount, "
+            + "         ABS(a.balance - IFNULL(SUM(CASE WHEN e.direction = 2 THEN e.amount ELSE -e.amount END), 0)) AS diff "
+            + "  FROM account a "
+            + "  LEFT JOIN account_entry e ON e.account_id = a.id "
+            + "  WHERE a.deleted = 0 "
+            + "  GROUP BY a.id, a.account_no, a.balance "
+            + ") t "
+            + "WHERE t.diff > 0.001 "
+            + "ORDER BY t.diff DESC "
             + "LIMIT #{limit}")
     List<Map<String, Object>> selectUnbalancedAccounts(@Param("limit") int limit);
 
