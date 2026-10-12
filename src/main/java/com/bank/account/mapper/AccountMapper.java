@@ -9,34 +9,22 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.math.BigDecimal;
-
 /**
- * 账户 Mapper
+ * 账户表数据访问
  */
 @Mapper
 public interface AccountMapper extends BaseMapper<Account> {
 
-    /**
-     * 根据账号查询(带用户信息)
-     */
+    /** 按账号查询账户（带所属用户信息） */
     AccountVO selectVOByAccountNo(@Param("accountNo") String accountNo);
 
-    /**
-     * 分页查询账户(带用户信息)
-     */
+    /** 分页查询账户（带所属用户信息） */
     IPage<AccountVO> selectVOPage(Page<AccountVO> page, @Param("userId") Long userId);
 
-    /**
-     * 扣减余额(乐观锁)
-     *
-     * @return 影响行数,0 表示余额不足或失败
-     */
-    int decreaseBalance(@Param("id") Long id,
-                        @Param("amount") BigDecimal amount);
+    /** 扣减余额；余额不足时返回 0（条件更新，靠数据库行锁保证并发安全） */
+    int decreaseBalance(@Param("id") Long id, @Param("amount") BigDecimal amount);
 
-    /**
-     * 增加余额
-     */
-    int increaseBalance(@Param("id") Long id,
-                        @Param("amount") BigDecimal amount);
+    /** 增加余额 */
+    int increaseBalance(@Param("id") Long id, @Param("amount") BigDecimal amount);
+
 }

@@ -1,0 +1,36 @@
+# =====================================================================
+# 银行记账与理财系统 —— systemd 守护配置（线上演示环境在阿里云轻量服务器上用的就是这份）
+#
+# 安装：
+#   1) scp 本文件到服务器 /etc/systemd/system/bank.service
+#   2) 把下面 -Dspring.datasource.password= 换成你的数据库口令
+#   3) systemctl daemon-reload && systemctl enable --now bank
+#   4) 查看状态：systemctl status bank --no-pager
+# =====================================================================
+[Unit]
+Description=Bank Account System (Spring Boot, port 8080)
+After=network-online.target mysqld.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+Environment=TZ=Asia/Shanghai
+WorkingDirectory=/www/wwwroot/bank-system
+# 数据库口令用 JVM 系统属性注入：
+#   jar 内 application-local.yml 会覆盖环境变量，而系统属性优先级最高，
+#   这样同一份 jar 既能本地跑（读 application-local.yml），也能在服务器上跑。
+ExecStart=/usr/bin/java -Dfile.encoding=UTF-8 -Xms160m -Xmx320m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC -Dspring.datasource.password=CHANGE_ME -jar /www/wwwroot/bank-system/target/bank-account-system.jar
+# 正常 stop 的 143(SIGTERM) 不算失败
+SuccessExitStatus=143
+# 崩溃自愈：进程被 OOM 杀掉或异常退出后自动拉起
+Restart=always
+RestartSec=10
+TimeoutStopSec=30
+# cgroup 级内存上限：应用内存失控时只杀自己，不会触发整机 OOM Killer 把同机的秒杀项目带走
+MemoryMax=560M
+MemorySwapMax=256M
+StandardOutput=append:/www/wwwroot/bank-system/app.log
+StandardError=append:/www/wwwroot/bank-system/app.log
+
+[Install]
+WantedBy=multi-user.target

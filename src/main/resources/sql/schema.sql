@@ -21,6 +21,7 @@ CREATE TABLE `sys_user` (
     `phone`           VARCHAR(20)  NOT NULL                COMMENT '手机号',
     `email`           VARCHAR(64)           DEFAULT NULL   COMMENT '邮箱',
     `status`          TINYINT      NOT NULL DEFAULT 1       COMMENT '状态:0-禁用,1-正常',
+    `role`            VARCHAR(16)  NOT NULL DEFAULT 'USER' COMMENT '角色:USER-普通用户,ADMIN-管理员',
     `create_time`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`         TINYINT      NOT NULL DEFAULT 0      COMMENT '逻辑删除:0-未删除,1-已删除',
@@ -143,6 +144,10 @@ INSERT INTO `sys_user` (`username`,`password`,`real_name`,`id_card`,`phone`,`ema
 ('zhangsan','$2a$10$7ec96oWfHL7nDOsRpejb7uda5WA3ALmj0rlTUSYzqN0Zd8pQEQDtW','张三','110101199001011234','13800138001','zhangsan@bank.com'),
 ('lisi','$2a$10$7ec96oWfHL7nDOsRpejb7uda5WA3ALmj0rlTUSYzqN0Zd8pQEQDtW','李四','110101199202022345','13800138002','lisi@bank.com'),
 ('wangwu','$2a$10$7ec96oWfHL7nDOsRpejb7uda5WA3ALmj0rlTUSYzqN0Zd8pQEQDtW','王五','110101199303033456','13800138003','wangwu@bank.com');
+
+-- 管理员账号(后台管理控制台): admin / 123456
+INSERT INTO `sys_user` (`username`,`password`,`real_name`,`id_card`,`phone`,`email`,`status`,`role`) VALUES
+('admin','$2a$10$7ec96oWfHL7nDOsRpejb7uda5WA3ALmj0rlTUSYzqN0Zd8pQEQDtW','系统管理员','110101199001010000','13800138000','admin@bank.com',1,'ADMIN');
 
 -- 账户数据
 INSERT INTO `account` (`account_no`,`user_id`,`account_type`,`balance`,`open_date`) VALUES

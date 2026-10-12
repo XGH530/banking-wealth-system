@@ -252,6 +252,7 @@ mvn spring-boot:run
 | zhangsan | 123456 | 张三 |
 | lisi | 123456 | 李四 |
 | wangwu | 123456 | 王五 |
+| **admin** | 123456 | **系统管理员（后台管理控制台）** |
 
 ### 访问地址
 
@@ -259,11 +260,79 @@ mvn spring-boot:run
 |------|-----|
 | 🌐 前端主界面 | http://localhost:8080/index.html |
 | 🔐 登录页 | http://localhost:8080/login.html |
+| 🖥️ 后台管理控制台 | http://localhost:8080/admin.html |
 | 📖 Knife4j 文档 | http://localhost:8080/doc.html |
 | 📄 Swagger UI | http://localhost:8080/swagger-ui.html |
 
 ---
 
+## 🖥️ 后台管理控制台
+
+浏览器打开 **http://localhost:8080/admin.html**（或 `http://localhost:8080/admin`），管理员账号 **admin / 123456**。
+
+### 权限模型：管理端与客户端接口分离
+
+- 客户端接口（`/api/accounts`、`/api/transactions`…）只返回**当前登录用户**的数据，靠 `UserContext` 里的 userId 过滤；
+- 管理端接口（`/api/admin/**`）是**跨用户的全量视角**，单独一组接口，由 `AdminInterceptor` 统一鉴权：
+  未登录 → `401`，已登录但 `role != ADMIN` → `403`（前端隐藏入口不算权限控制，边界在服务端）。
+- `sys_user` 表新增 `role` 字段（`USER` / `ADMIN`），老库执行一次
+  [`src/main/resources/sql/migration-admin-console.sql`](src/main/resources/sql/migration-admin-console.sql) 即可升级（会新增 `role` 列与 `admin` 账号）。
+
+### 功能
+
+| 页面 | 说明 |
+|---|---|
+| 运营概览 | 客户/账户/余额/流水总量、账户状态分布、交易类型分布、近 7 日趋势（Chart.js）、余额 Top5 |
+| 用户管理 | 关键字搜索（用户名/姓名/手机号）、禁用/启用、身份证与手机号脱敏展示 |
+| 账户管理 | 账号搜索、状态过滤、冻结/解冻 |
+| 交易流水 | 全量流水，支持账号/交易类型/日期区间过滤与分页 |
+| 理财产品 | 产品列表、状态切换（待售/募集中/运作中/已结束） |
+| 理财持仓 | 持仓明细（客户、产品、金额、收益、到期日） |
+| 运行监控 | 数据库与 Redis 连通性/耗时、JVM 堆内存与运行时长，每 10 秒自动刷新 |
+
+> 统计类接口（总量、分布、趋势）都是把聚合下推到 SQL 的 `GROUP BY`（`selectMaps`），
+> 不是把明细全捞进内存再循环 —— 数据量涨上来也不会把 JVM 撑爆。
+
+### 管理端接口一览
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/admin/me` | 当前管理员信息 |
+| GET | `/api/admin/overview` | 控制台概览（总量 + 分布 + 趋势 + Top5） |
+| GET | `/api/admin/users` | 用户分页查询 |
+| PUT | `/api/admin/users/{id}/status` | 启用/禁用用户（不能停用自己） |
+| GET | `/api/admin/accounts` | 账户分页查询（含所属客户） |
+| PUT | `/api/admin/accounts/{id}/status` | 冻结/解冻账户 |
+| GET | `/api/admin/transactions` | 全量流水查询 |
+| GET | `/api/admin/products` | 理财产品列表 |
+| PUT | `/api/admin/products/{id}/status` | 修改产品状态 |
+| GET | `/api/admin/holdings` | 理财持仓列表 |
+| GET | `/api/admin/health` | 数据库 / Redis / JVM 健康检查 |
+
+### 线上部署：systemd 守护（崩溃自愈）
+
+线上演示环境用 systemd 管理，进程被 OOM 杀掉或异常退出后会自动拉起，服务器重启也会自启：
+
+```ini
+# /etc/systemd/system/bank.service
+[Service]
+WorkingDirectory=/www/wwwroot/bank-system
+ExecStart=/usr/bin/java -Dfile.encoding=UTF-8 -Xms160m -Xmx320m -XX:MaxMetaspaceSize=192m -XX:+UseSerialGC \
+          -Dspring.datasource.password=<数据库口令> -jar /www/wwwroot/bank-system/target/bank-account-system.jar
+Restart=always
+RestartSec=10
+# cgroup 级内存上限：应用内存失控时只影响自己，不会触发整机 OOM Killer 把别的服务带走
+MemoryMax=560M
+MemorySwapMax=256M
+```
+
+常用命令：`systemctl status bank` / `systemctl restart bank` / `journalctl -u bank -n 100 --no-pager`。
+
+> 小坑：`spring.config.import` 导入的 `application-local.yml` 会覆盖环境变量里的数据库口令，
+> 所以线上用 JVM 系统属性 `-Dspring.datasource.password=` 注入（系统属性优先级最高），
+> 这样同一份 jar 既能在本地跑（用 `application-local.yml`），也能在服务器上跑。
+
+---
 ## 📡 API 接口清单
 
 ### 鉴权 `/api/auth`
