@@ -16,6 +16,7 @@ import com.bank.account.mapper.FinancialProductMapper;
 import com.bank.account.mapper.ProductHoldingMapper;
 import com.bank.account.mapper.TransactionRecordMapper;
 import com.bank.account.service.HoldingService;
+import com.bank.account.service.LedgerService;
 import com.bank.account.vo.HoldingVO;
 import com.bank.account.vo.PageVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -46,6 +47,7 @@ public class HoldingServiceImpl implements HoldingService {
     private final FinancialProductMapper productMapper;
     private final AccountMapper accountMapper;
     private final TransactionRecordMapper txnMapper;
+    private final LedgerService ledgerService;
     private final RedisTemplate<String, Object> redisTemplate;
 
     /** 一年的天数(简化处理,银行一般按 360 或 365) */
@@ -152,6 +154,9 @@ public class HoldingServiceImpl implements HoldingService {
         record.setTxnTime(today.atStartOfDay().plusSeconds(java.time.LocalTime.now().toSecondOfDay()));
         txnMapper.insert(record);
 
+        // 复式记账:申购是客户资金流出 → 借 客户账户 / 贷 内部理财归集账户
+        ledgerService.recordProductPurchase(refreshed, amount, record.getTxnNo(), record.getRemark());
+
         // 8. 失效缓存
         evictAccountCache(account.getAccountNo());
         evictProductCache(product.getId());
@@ -225,6 +230,9 @@ public class HoldingServiceImpl implements HoldingService {
         record.setRemark("赎回理财产品 本金=" + principal + " 收益=" + actualIncome);
         record.setTxnTime(today.atStartOfDay().plusSeconds(java.time.LocalTime.now().toSecondOfDay()));
         txnMapper.insert(record);
+
+        // 复式记账:赎回是客户资金流入(本金+收益) → 借 内部理财归集账户 / 贷 客户账户
+        ledgerService.recordProductRedeem(refreshed, totalBack, record.getTxnNo(), record.getRemark());
 
         // 5. 失效缓存
         evictAccountCache(refreshed.getAccountNo());

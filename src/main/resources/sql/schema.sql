@@ -164,6 +164,46 @@ INSERT INTO `financial_product` (`product_code`,`product_name`,`product_type`,`a
 ('P2024004','成长混合基金',3,0.0750,1000.00,100.00,0,4,8000000.00,8000000.00,'2024-06-01','2024-09-30',1),
 ('P2024005','国债2024-1',4,0.0300,100.00,100.00,1095,1,10000000.00,10000000.00,'2024-04-01','2024-04-30',0);
 
+-- ------------------------------------------------------------
+-- 6. 会计分录表(复式记账明细账)
+--    每笔资金业务写两条分录(借一条、贷一条),用于试算平衡与余额对账
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `account_entry`;
+CREATE TABLE `account_entry` (
+    `id`            BIGINT        NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `entry_no`      VARCHAR(32)   NOT NULL                COMMENT '分录号(唯一)',
+    `txn_no`        VARCHAR(32)   NOT NULL                COMMENT '关联业务流水号(同一笔业务借贷两条分录相同)',
+    `account_id`    BIGINT        NOT NULL                COMMENT '账户ID(0 表示银行内部账户)',
+    `account_no`    VARCHAR(20)   NOT NULL                COMMENT '账号(冗余)',
+    `direction`     TINYINT       NOT NULL                COMMENT '方向:1-借 2-贷',
+    `amount`        DECIMAL(18,2) NOT NULL                COMMENT '金额(正数,方向由 direction 表示)',
+    `balance_after` DECIMAL(18,2) NOT NULL DEFAULT 0.00   COMMENT '该腿记账后账户余额',
+    `biz_type`      TINYINT       NOT NULL                COMMENT '业务类型:0-期初 1-存入 2-支取 3-转入 4-转出 5-利息 6-申购 7-赎回 8-冲正',
+    `entry_time`    DATETIME      NOT NULL                COMMENT '记账时间',
+    `remark`        VARCHAR(255)           DEFAULT NULL   COMMENT '摘要',
+    `reverse_of`    VARCHAR(32)            DEFAULT NULL   COMMENT '冲正关系',
+    `is_reversed`   TINYINT       NOT NULL DEFAULT 0      COMMENT '原分录是否已被冲正:0-否 1-是',
+    `create_time`   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_entry_no` (`entry_no`),
+    KEY `idx_txn_no` (`txn_no`),
+    KEY `idx_account_time` (`account_id`, `entry_time`),
+    KEY `idx_entry_time` (`entry_time`),
+    KEY `idx_biz_type` (`biz_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会计分录表(复式记账)';
+
+-- ------------------------------------------------------------
+-- 7. 请求幂等表(资金接口防重复提交)
+-- ------------------------------------------------------------
+DROP TABLE IF EXISTS `idempotent_record`;
+CREATE TABLE `idempotent_record` (
+    `idem_key`    VARCHAR(64) NOT NULL                COMMENT '幂等键(客户端生成的唯一请求ID)',
+    `biz_type`    VARCHAR(32) NOT NULL                COMMENT '业务类型',
+    `txn_no`      VARCHAR(32)          DEFAULT NULL   COMMENT '首次执行的流水号',
+    `create_time` DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`idem_key`),
+    KEY `idx_txn_no` (`txn_no`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='请求幂等记录表';
 -- ============================================================
 -- 视图:用户账户一览
 -- ============================================================

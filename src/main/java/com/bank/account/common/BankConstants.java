@@ -42,6 +42,29 @@ public final class BankConstants {
     public static final String CACHE_PRODUCT_PREFIX   = "bank:product:";
     public static final String CACHE_PRODUCT_LIST_KEY = "bank:product:list";
 
+    /** 交易类型:冲正(红冲) */
+    public static final int TXN_REVERSE = 8;
+
+    /** 分录方向:1-借(资产增加/负债减少) 2-贷(负债增加/资产减少) */
+    public static final int ENTRY_DEBIT  = 1;
+    public static final int ENTRY_CREDIT = 2;
+
+    /** 分录业务类型:0-期初余额,其余复用交易类型 */
+    public static final int BIZ_OPENING = 0;
+
+    /**
+     * 内部账户(银行现金/清算/理财归集)
+     *
+     * 【设计说明】存取款只有一方是客户账户,另一方是银行内部账户。
+     * 复式记账要求"有借必有贷",所以用 id=0、账号 SYSTEM 表示内部账户,
+     * 它只参与平衡,不参与客户余额对账。
+     */
+    public static final long SYSTEM_ACCOUNT_ID = 0L;
+    public static final String SYSTEM_ACCOUNT_NO = "SYSTEM";
+
+    /** 分录号前缀 */
+    public static final String ENTRY_NO_PREFIX = "E";
+
     /** 流水号前缀 */
     public static final String TXN_NO_PREFIX     = "T";
     public static final String HOLDING_NO_PREFIX = "H";

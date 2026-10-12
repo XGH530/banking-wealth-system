@@ -115,7 +115,7 @@ const Admin = {
     });
     const titles = {
       dashboard: '运营概览', users: '用户管理', accounts: '账户管理',
-      txns: '交易流水', products: '理财产品', holdings: '理财持仓', ops: '运行监控'
+      txns: '交易流水', products: '理财产品', holdings: '理财持仓', ledger: '账务对账', ops: '运行监控'
     };
     document.getElementById('breadcrumb').textContent = titles[tab] || tab;
 
@@ -124,7 +124,7 @@ const Admin = {
 
     const renderers = {
       dashboard: renderDashboard, users: renderUsers, accounts: renderAccounts,
-      txns: renderTxns, products: renderProducts, holdings: renderHoldings, ops: renderOps
+      txns: renderTxns, products: renderProducts, holdings: renderHoldings, ledger: renderLedger, ops: renderOps
     };
     (renderers[tab] || renderDashboard)(content);
   },
@@ -682,3 +682,128 @@ async function renderOps(root) {
     }).catch(function () { /* 静默失败 */ });
   }, 10000);
 }
+/* ============================================================
+   ⑦ 账务对账（复式记账 / 试算平衡 / 余额对账 / 冲正）
+   ============================================================ */
+
+async function renderLedger(root) {
+  const st = Admin.state.pages.ledger || (Admin.state.pages.ledger = { current: 1, accountNo: '', txnNo: '', direction: '' });
+  let trial, rec, entries;
+  try {
+    trial = await request('/api/admin/ledger/trial-balance');
+    rec = await request('/api/admin/ledger/reconcile');
+    const qs = new URLSearchParams({ current: st.current, size: 10 });
+    if (st.accountNo) qs.set('accountNo', st.accountNo);
+    if (st.txnNo) qs.set('txnNo', st.txnNo);
+    if (st.direction !== '') qs.set('direction', st.direction);
+    entries = await request('/api/admin/ledger/entries?' + qs.toString());
+  } catch (e) {
+    root.innerHTML = '<div class="empty">加载失败：' + esc(e.message) + '</div>'; return;
+  }
+
+  const balanced = !!trial.balanced;
+  const recOk = Number(rec.unbalancedCount || 0) === 0;
+
+  root.innerHTML =
+    '<div class="grid grid-2 mb-3">' +
+      '<div class="card"><div class="card-title"><i class="bi bi-scales"></i> 试算平衡（' +
+        esc(trial.startDate) + ' ~ ' + esc(trial.endDate) + '）</div>' +
+        '<div class="health-row"><span class="dot ' + (balanced ? 'ok' : 'bad') + '"></span>' +
+          '<b>' + (balanced ? '借贷平衡' : '借贷不平衡') + '</b>' +
+          '<span class="muted" style="margin-left:auto">差额 ' + money(trial.difference) + '</span></div>' +
+        '<div class="muted" style="font-size:12.5px;margin-top:10px">借方合计 <b>¥' + money(trial.debitTotal) +
+          '</b>　·　贷方合计 <b>¥' + money(trial.creditTotal) + '</b>　·　分录 ' + int(trial.entryCount) + ' 条</div>' +
+        '<div class="muted" style="font-size:12px;margin-top:8px">' +
+          '每笔业务固定两条分录（借一条、贷一条，金额相等），所以两者的合计必须完全相等。' +
+          '一旦有人漏写分录、金额写错，这里立刻就红了。</div>' +
+      '</div>' +
+      '<div class="card"><div class="card-title"><i class="bi bi-check2-circle"></i> 余额对账（账户余额 vs 分录净额）</div>' +
+        '<div class="health-row"><span class="dot ' + (recOk ? 'ok' : 'bad') + '"></span>' +
+          '<b>' + (recOk ? '全部账户对得上' : rec.unbalancedCount + ' 个账户不平') + '</b>' +
+          '<span class="muted" style="margin-left:auto">共检查 ' + int(rec.checkedAccounts) + ' 个账户</span></div>' +
+        '<div class="muted" style="font-size:12.5px;margin-top:10px">账户余额合计 <b>¥' + money(rec.totalBalance) +
+          '</b>　·　分录净额合计 <b>¥' + money(rec.ledgerNet) + '</b></div>' +
+        '<div class="muted" style="font-size:12px;margin-top:8px">' +
+          '对账不看应用怎么写的代码，只用分录反推余额再和余额字段对撞 —— 漏记、重复记账、绕过服务层改余额都会被抓出来。</div>' +
+      '</div>' +
+    '</div>' +
+
+    ((rec.items && rec.items.length)
+      ? '<div class="table-wrap mb-3"><table class="admin-table"><thead><tr>' +
+        '<th>不平账号</th><th class="num">账户余额</th><th class="num">分录净额</th><th class="num">差额</th><th class="num">分录数</th>' +
+        '</tr></thead><tbody>' + rec.items.map(function (r) {
+          return '<tr><td class="mono">' + esc(r.accountNo) + '</td><td class="num"><b>¥' + money(r.balance) +
+            '</b></td><td class="num">' + money(r.ledgerNet) + '</td>' +
+            '<td class="num" style="color:#e53e3e">' + money(r.difference) + '</td>' +
+            '<td class="num">' + int(r.entryCount) + '</td></tr>';
+        }).join('') + '</tbody></table></div>'
+      : '') +
+
+    '<div class="card mb-3"><div class="card-title"><i class="bi bi-arrow-counterclockwise"></i> 冲正（红冲错账）</div>' +
+      '<div class="toolbar" style="margin-bottom:6px">' +
+        '<input class="inp" id="rvTxnNo" style="width:250px" placeholder="输入要冲正的流水号，例如 T000000000001">' +
+        '<input class="inp" id="rvReason" style="width:220px" placeholder="冲正原因（选填）">' +
+        '<button class="btn btn-primary" onclick="Admin.reverseTxn()"><i class="bi bi-arrow-counterclockwise"></i> 执行冲正</button>' +
+      '</div>' +
+      '<div class="muted" style="font-size:12px">冲正会为原流水生成方向相反的分录并回滚余额；原分录只标记「已冲正」，金额和方向一律不改 —— 账不可改，只可冲。</div>' +
+    '</div>' +
+
+    '<div class="toolbar">' +
+      '<input class="inp" id="lAccountNo" style="width:200px" placeholder="账号" value="' + esc(st.accountNo) + '">' +
+      '<input class="inp" id="lTxnNo" style="width:220px" placeholder="流水号" value="' + esc(st.txnNo) + '">' +
+      '<select class="inp" id="lDirection">' +
+        '<option value=""' + (st.direction === '' ? ' selected' : '') + '>全部方向</option>' +
+        '<option value="1"' + (st.direction === 1 ? ' selected' : '') + '>借</option>' +
+        '<option value="2"' + (st.direction === 2 ? ' selected' : '') + '>贷</option>' +
+      '</select>' +
+      '<button class="btn btn-primary" onclick="Admin.searchLedger()"><i class="bi bi-search"></i> 查询分录</button>' +
+      '<button class="btn btn-ghost" onclick="Admin.resetLedger()"><i class="bi bi-arrow-counterclockwise"></i> 重置</button>' +
+      '<div class="spacer"></div><span class="muted" style="font-size:12.5px">共 ' + int(entries.total) + ' 条分录</span>' +
+    '</div>' +
+    '<div class="table-wrap"><table class="admin-table">' +
+      '<thead><tr><th>分录号</th><th>流水号</th><th>账号</th><th>方向</th><th class="num">金额</th>' +
+      '<th class="num">记账后余额</th><th>摘要</th><th>记账时间</th><th>状态</th></tr></thead>' +
+      '<tbody>' + (entries.records || []).map(function (e) {
+        const dcls = e.direction === 1 ? 'badge-info' : 'badge-on';
+        const st2 = e.isReversed === 1
+          ? '<span class="badge-soft badge-off">已冲正</span>'
+          : (e.reverseOf ? '<span class="badge-soft badge-warn">冲正分录</span>' : '<span class="badge-soft badge-gray">有效</span>');
+        return '<tr><td class="mono" style="font-size:12px">' + esc(e.entryNo) + '</td>' +
+          '<td class="mono" style="font-size:12px">' + esc(e.txnNo) + '</td>' +
+          '<td class="mono">' + esc(e.accountNo) + '</td>' +
+          '<td><span class="badge-soft ' + dcls + '">' + esc(e.directionText) + '</span></td>' +
+          '<td class="num"><b>¥' + money(e.amount) + '</b></td>' +
+          '<td class="num muted">' + money(e.balanceAfter) + '</td>' +
+          '<td class="muted">' + esc(e.bizTypeText) + (e.remark ? ' · ' + esc(e.remark) : '') + '</td>' +
+          '<td class="muted" style="font-size:12.5px">' + esc(e.entryTime) + '</td>' +
+          '<td>' + st2 + '</td></tr>';
+      }).join('') + '</tbody>' +
+    '</table>' + ((entries.records && entries.records.length) ? pagerHtml('ledger', entries) : '<div class="empty">暂无分录</div>') + '</div>';
+}
+
+Admin.searchLedger = function () {
+  const st = Admin.state.pages.ledger || (Admin.state.pages.ledger = {});
+  st.accountNo = document.getElementById('lAccountNo').value.trim();
+  st.txnNo = document.getElementById('lTxnNo').value.trim();
+  st.direction = document.getElementById('lDirection').value;
+  st.current = 1;
+  Admin.switchTab('ledger');
+};
+
+Admin.resetLedger = function () {
+  Admin.state.pages.ledger = { current: 1, accountNo: '', txnNo: '', direction: '' };
+  Admin.switchTab('ledger');
+};
+
+Admin.reverseTxn = async function () {
+  const txnNo = document.getElementById('rvTxnNo').value.trim();
+  const reason = document.getElementById('rvReason').value.trim();
+  if (!txnNo) { toast('请输入要冲正的流水号', 'error'); return; }
+  if (!confirm('确定对流水 ' + txnNo + ' 执行冲正？将生成反向分录并回滚余额。')) return;
+  try {
+    const changed = await request('/api/admin/ledger/reverse/' + encodeURIComponent(txnNo)
+      + (reason ? '?reason=' + encodeURIComponent(reason) : ''), { method: 'POST' });
+    toast(changed ? '冲正成功，已生成反向分录' : '该流水此前已冲正，未重复操作', 'success');
+    Admin.switchTab('ledger');
+  } catch (e) { toast(e.message, 'error'); }
+};
