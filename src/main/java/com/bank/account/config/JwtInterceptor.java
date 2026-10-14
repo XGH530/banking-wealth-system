@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -20,6 +21,7 @@ public class JwtInterceptor implements HandlerInterceptor {
 
     private final JwtUtils jwtUtils;
     private final JwtProperties props;
+    private final StringRedisTemplate redisTemplate;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -45,6 +47,21 @@ public class JwtInterceptor implements HandlerInterceptor {
         Object type = claims.get("type");
         if (!"ACCESS".equals(type)) {
             throw new BusinessException(ResultCode.UNAUTHORIZED, "请使用访问令牌");
+        }
+
+        // 黑名单校验:登出后的 token 会被写入 Redis,在这里直接拒绝
+        // (JWT 无状态,没有这一步"登出立即失效"就做不到)
+        try {
+            if (Boolean.TRUE.equals(redisTemplate.hasKey(
+                    com.bank.account.common.BankConstants.CACHE_TOKEN_BLACKLIST_PREFIX + token))) {
+                throw new BusinessException(ResultCode.UNAUTHORIZED, "登录已失效,请重新登录");
+            }
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            // Redis 抖动不应该让所有请求都登录失败:记录告警后放行(可用性优先)
+            org.slf4j.LoggerFactory.getLogger(JwtInterceptor.class)
+                    .warn("校验 Token 黑名单失败,已降级放行: {}", e.getMessage());
         }
 
         // 写入上下文

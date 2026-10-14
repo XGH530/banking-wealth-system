@@ -26,6 +26,7 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.concurrent.ThreadLocalRandom;
 import java.time.LocalDate;
 
 /**
@@ -172,11 +173,20 @@ public class AccountServiceImpl implements AccountService {
     // ------------------------------------------------------------
     // 内部缓存工具
     // ------------------------------------------------------------
+    /**
+     * 缓存账户(Cache-Aside)
+     *
+     * 【为什么过期时间要加随机抖动】
+     * 如果所有账户缓存的 TTL 都是固定 30 分钟,那么在同一时刻写入的那一批 key
+     * 会在同一时刻集中失效 —— 请求同时回源数据库,这就是「缓存雪崩」。
+     * 给每个 key 的 TTL 加上 ±10 分钟随机偏移后,失效时间被打散,回源压力被摊平。
+     */
     private void cacheAccount(AccountVO vo) {
         try {
+            long ttlMinutes = 30 + ThreadLocalRandom.current().nextInt(-10, 11);
             redisTemplate.opsForValue().set(
                     BankConstants.CACHE_ACCOUNT_PREFIX + vo.getAccountNo(),
-                    vo, Duration.ofMinutes(30));
+                    vo, Duration.ofMinutes(ttlMinutes));
         } catch (Exception e) {
             log.warn("缓存账户失败: {}", e.getMessage());
         }

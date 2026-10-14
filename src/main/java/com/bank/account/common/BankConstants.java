@@ -65,6 +65,14 @@ public final class BankConstants {
     /** 分录号前缀 */
     public static final String ENTRY_NO_PREFIX = "E";
 
+    /**
+     * Token 黑名单前缀
+     * 用途:登出时把 access token 加入黑名单(有效期 = token 剩余时间),
+     *      拦截器每次校验都先查黑名单 —— 这样"登出立即失效"才成立,
+     *      而不是等 token 自然过期。
+     */
+    public static final String CACHE_TOKEN_BLACKLIST_PREFIX = "bank:jwt:blacklist:";
+
     /** 流水号前缀 */
     public static final String TXN_NO_PREFIX     = "T";
     public static final String HOLDING_NO_PREFIX = "H";

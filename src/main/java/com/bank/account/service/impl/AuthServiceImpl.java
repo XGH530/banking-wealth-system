@@ -36,7 +36,8 @@ public class AuthServiceImpl implements AuthService {
     private final StringRedisTemplate redisTemplate;
 
     /** Redis 中存储旧 token 的黑名单前缀 */
-    private static final String TOKEN_BLACKLIST_PREFIX = "bank:jwt:blacklist:";
+    /** 黑名单前缀(与拦截器共用 BankConstants 里的定义,避免两处写死不一致) */
+    private static final String TOKEN_BLACKLIST_PREFIX = com.bank.account.common.BankConstants.CACHE_TOKEN_BLACKLIST_PREFIX;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -95,6 +96,27 @@ public class AuthServiceImpl implements AuthService {
                 .username(user.getUsername())
                 .realName(user.getRealName())
                 .build();
+    }
+
+    @Override
+    public void logout(String accessToken) {
+        if (accessToken == null || accessToken.isBlank()) {
+            return;
+        }
+        try {
+            Claims claims = jwtUtils.parse(accessToken);
+            long remainMillis = claims.getExpiration().getTime() - System.currentTimeMillis();
+            if (remainMillis > 0) {
+                // TTL = token 剩余有效期:过期后黑名单自动清理,不会无限增长
+                redisTemplate.opsForValue().set(TOKEN_BLACKLIST_PREFIX + accessToken,
+                        "1", Duration.ofMillis(remainMillis));
+                log.info("用户 {} 已登出,Token 加入黑名单,traceId={}",
+                        claims.get("username"), claims.getId());
+            }
+        } catch (Exception e) {
+            // token 本来就无效/已过期时无需入黑名单,登出接口保持幂等
+            log.debug("登出时解析 Token 失败(忽略): {}", e.getMessage());
+        }
     }
 
     @Override

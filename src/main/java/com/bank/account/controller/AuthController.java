@@ -48,9 +48,12 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    @Operation(summary = "退出登录(客户端清除 token 即可)")
-    public Result<Void> logout() {
-        // 无状态 JWT,服务端不存储;如有需要可将 token 加入黑名单
+    @Operation(summary = "退出登录", description = "把当前 access token 加入 Redis 黑名单，立即失效；重复调用幂等")
+    public Result<Void> logout(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            authService.logout(header.substring(7).trim());
+        }
         return Result.success();
     }
 }
